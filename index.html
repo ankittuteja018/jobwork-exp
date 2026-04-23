@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobwork Expense Tracker</title>
+<meta name="theme-color" content="#1B2A4A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jobwork Tracker">
+<style>
+:root {
+  --bg: #F4F7F9;
+  --surface: #ffffff;
+  --border: #E2EAF0;
+  --text: #1B2A4A;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --topbar: #1B2A4A;
+  --input-bg: #ffffff;
+  --input-border: #D1D9E0;
+  --th-bg: #F8FAFC;
+  --tr-hover: #FAFCFD;
+  --tfoot-bg: #F8FAFC;
+  --chip-bg: #ffffff;
+  --bar-track: #F1F5F9;
+  --primary: #028090;
+  --primary-hover: #016b79;
+}
+body.dark {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --border: #334155;
+  --text: #E2E8F0;
+  --text-muted: #94A3B8;
+  --text-faint: #64748B;
+  --topbar: #0F172A;
+  --input-bg: #1E293B;
+  --input-border: #475569;
+  --th-bg: #1E293B;
+  --tr-hover: #253347;
+  --tfoot-bg: #1E293B;
+  --chip-bg: #1E293B;
+  --bar-track: #334155;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
+.topbar{background:var(--topbar);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.topbar-brand h1{color:#fff;font-size:19px;font-weight:700;letter-spacing:.2px;line-height:1.2}
+.topbar-brand .subtitle{color:#8BAFC8;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative}
+.pill-btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);padding:7px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .15s}
+.pill-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)}
+.pill-btn.primary{background:#028090;border-color:#028090;font-weight:600}
+.pill-btn.primary:hover{background:#016b79;border-color:#016b79}
+.pill-btn:disabled{opacity:.6;cursor:not-allowed}
+.offline-banner{display:none;background:#EF4444;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:600}
+.container{max-width:1120px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--surface);border-radius:10px;padding:12px 14px;border:1px solid var(--border)}
+.metric-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:700;color:var(--text)}
+.metric-value.warn{color:#F59E0B}
+.metric-value.good{color:#10B981}
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:18px;overflow-x:auto;border:1px solid var(--border)}
+.tab{flex:1;padding:11px 14px;font-size:13.5px;cursor:pointer;color:var(--text-muted);text-align:center;border-radius:8px;transition:all .15s;font-weight:500;white-space:nowrap;border-bottom:2.5px solid transparent}
+.tab.active{color:#028090;border-bottom-color:#028090;font-weight:600}
+.tab:hover:not(.active){color:var(--text)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.1rem}
+.card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:18px;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:10px}
+.card-title::before{content:'';display:inline-block;width:3px;height:15px;background:#028090;border-radius:2px}
+.form-row{display:grid;gap:14px;margin-bottom:14px}
+.r2{grid-template-columns:1fr 1fr}
+.r3{grid-template-columns:1fr 1fr 1fr}
+.r4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:700px){.r2,.r3,.r4{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:7px}
+.fg label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.fg label .req{color:#EF4444;margin-left:2px}
+.fg input,.fg select,.fg textarea{width:100%;padding:11px 12px;border:1px solid var(--input-border);border-radius:8px;font-size:13.5px;color:var(--text);background:var(--input-bg);outline:none;transition:border .15s;font-family:inherit}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#028090;box-shadow:0 0 0 3px rgba(2,128,144,.1)}
+.fg input::placeholder{color:#94A3B8}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+.btn-primary{background:#028090;color:#fff;border:none;padding:13px 36px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600;letter-spacing:.3px}
+.btn-primary:hover{background:#016b79}
+.btn-primary.full{flex:1;padding:14px;font-size:14.5px}
+.btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:13px 28px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:500}
+.btn-ghost:hover{background:var(--bg)}
+.btn-sm{padding:5px 12px;font-size:11.5px;border-radius:6px;border:none;cursor:pointer;font-weight:600}
+.btn-approve{background:#D1FAE5;color:#065F46}.btn-approve:hover{background:#A7F3D0}
+.btn-reject{background:#FEE2E2;color:#991B1B}.btn-reject:hover{background:#FECACA}
+.btn-export{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.b-pending{background:#FEF3C7;color:#92400E}
+.b-approved{background:#D1FAE5;color:#065F46}
+.b-auto-approved{background:#DCFCE7;color:#14532D}
+.b-rejected{background:#FEE2E2;color:#991B1B}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chip{padding:9px 18px;border-radius:10px;font-size:13px;border:1px solid var(--border);background:var(--chip-bg);cursor:pointer;color:var(--text);font-weight:500;transition:all .15s}
+.chip.active{background:#028090;color:#fff;border-color:#028090;font-weight:600}
+.chip:hover:not(.active){border-color:#028090;color:#028090}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);padding:9px 10px;background:var(--th-bg);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--tr-hover)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text-faint);font-size:13px;padding:2px 6px;border-radius:4px}
+.del-btn:hover{color:#EF4444;background:#FEE2E2}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-faint);font-size:13px}
+.tfoot-row td{font-weight:700;background:var(--tfoot-bg);border-top:1.5px solid var(--border)}
+.toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.notice{border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:12px;font-weight:500}
+.notice.success{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+.notice.error{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.notice.info{background:#DBEAFE;color:#1E40AF;border:1px solid #BFDBFE}
+.notice.warn{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.setting-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;color:var(--text);font-weight:500;min-width:140px}
+.setting-desc{font-size:12px;color:var(--text-muted);flex:1}
+.setting-input{flex:2;min-width:200px}
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.25rem}
+@media(max-width:700px){.dash-grid{grid-template-columns:1fr 1fr}}
+.dash-metric{background:var(--surface);border-radius:12px;padding:28px 20px;border:1px solid var(--border);text-align:center}
+.dash-num{font-size:34px;font-weight:800;color:#028090;line-height:1;margin-bottom:10px}
+.dash-lbl{font-size:11.5px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.bar-wrap{margin-bottom:8px}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.bar-label span:first-child{color:var(--text);font-weight:500}
+.bar-label span:last-child{color:var(--text-muted)}
+.bar-track{background:var(--bar-track);border-radius:999px;height:8px;overflow:hidden}
+.bar-fill{height:8px;border-radius:999px;background:#028090;transition:width .4s}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h3{font-size:16px;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-faint);padding:2px 6px;border-radius:4px}
+.modal-close:hover{color:#EF4444;background:#FEE2E2}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);gap:12px}
+.detail-row:last-child{border-bottom:none}
+.dl{font-size:12px;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
+.dr{font-size:13px;color:var(--text);font-weight:600;text-align:right}
+.section-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.search-box{width:100%;padding:8px 12px;border:1px solid var(--input-border);border-radius:7px;font-size:13px;color:var(--text);background:var(--input-bg);outline:none}
+.search-box:focus{border-color:#028090;box-shadow:0 0 0 3px rgba(2,128,144,.1)}
+.expense-summary{margin-top:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.expense-summary-row{display:flex;justify-content:space-between;padding:13px 18px;font-size:14px;color:var(--text);border-bottom:1px solid var(--border);background:var(--surface)}
+.expense-summary-row:last-child{border-bottom:none}
+.expense-summary-row.total{background:#E0F7FA;font-weight:700;color:#028090;font-size:15px}
+body.dark .expense-summary-row.total{background:rgba(2,128,144,.2)}
+.wastage-alert{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:500;display:none}
+.wastage-alert.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0;display:block}
+.wastage-alert.warn{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;display:block}
+.wastage-alert.danger{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;display:block}
+</style>
+</head>
+<body>
+
+<div id="offline-banner" class="offline-banner" style="position:fixed;top:0;left:0;right:0;z-index:9998">⚠️ No internet connection — changes will not be saved</div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <h1>Jobwork Expense Tracker</h1>
+    <div class="subtitle">Manual Jobwork Operations</div>
+  </div>
+  <div class="topbar-right" id="topbar-right" style="display:none">
+    <button class="pill-btn" id="user-pill" onclick="toggleUserMenu(event)">
+      <span id="user-name-display"></span>
+      <span style="margin-left:4px;font-size:9px">▼</span>
+    </button>
+    <div id="user-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200">
+      <button onclick="closeUserMenu();toggleDarkMode()" style="width:100%;text-align:left;background:none;border:none;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px">🌙 Toggle dark mode</button>
+      <button onclick="closeUserMenu();logout()" style="width:100%;text-align:left;background:none;border:none;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#EF4444;display:flex;align-items:center;gap:8px">🚪 Logout</button>
+    </div>
+    <button class="pill-btn" onclick="refreshLists()" id="refresh-btn" title="Pull latest Brand/Item/Size/Process lists from Google Sheet">↻ Refresh Lists</button>
+    <button class="pill-btn primary" onclick="syncToSheet()" id="sync-btn">Sync To Sheet</button>
+  </div>
+</div>
+
+<!-- Login Screen -->
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 80px);padding:1rem">
+  <div class="card" style="max-width:360px;width:100%">
+    <h2 style="font-size:17px;margin-bottom:6px;color:var(--text)">Sign in</h2>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px">Use the credentials set by your admin.</p>
+    <input type="text" id="login-name" placeholder="Username" style="width:100%;padding:12px 14px;border:1px solid var(--input-border);border-radius:10px;font-size:14px;color:var(--text);background:var(--input-bg);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    <input type="password" id="login-pass" placeholder="Password" style="width:100%;padding:12px 14px;border:1px solid var(--input-border);border-radius:10px;font-size:14px;color:var(--text);background:var(--input-bg);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')loginUser()">
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:9px;font-size:12.5px;margin-bottom:12px"></div>
+    <button class="btn-primary full" onclick="loginUser()">Sign In</button>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">Default: <b>admin</b> / <b>admin123</b></p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="main-app" style="display:none">
+<div class="container">
+
+  <div id="global-notice" class="notice" style="display:none"></div>
+
+  <!-- Summary metrics -->
+  <div class="summary-grid">
+    <div class="metric"><div class="metric-label">Today's amount</div><div class="metric-value" id="s-today">₹0</div></div>
+    <div class="metric"><div class="metric-label">This month</div><div class="metric-value" id="s-month">₹0</div></div>
+    <div class="metric"><div class="metric-label">Pending approval</div><div class="metric-value warn" id="s-pending">0</div></div>
+    <div class="metric"><div class="metric-label">Approved today</div><div class="metric-value good" id="s-approved">0</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="main-tabs">
+    <div class="tab active" onclick="showTab('add',this)" id="tab-btn-add">+ Add Entry</div>
+    <div class="tab" onclick="showTab('log',this)" id="tab-btn-log">Entry Log</div>
+    <div class="tab" onclick="showTab('approval',this)" id="tab-btn-approval" style="display:none">Approval Queue <span id="pb-badge" style="background:#F59E0B;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:3px;display:none"></span></div>
+    <div class="tab" onclick="showTab('owner',this)" id="tab-btn-owner" style="display:none">Owner Dashboard</div>
+    <div class="tab" onclick="showTab('settings',this)" id="tab-btn-settings" style="display:none">Settings</div>
+  </div>
+
+  <!-- ADD ENTRY TAB -->
+  <div id="tab-add">
+    <div class="card">
+      <div class="card-title">Jobwork Details</div>
+      <input type="hidden" id="i-staff">
+      <input type="hidden" id="i-ref">
+
+      <div class="form-row r3">
+        <div class="fg">
+          <label>Date<span class="req">*</span></label>
+          <input type="date" id="i-date">
+        </div>
+        <div class="fg">
+          <label>Jobworker<span class="req">*</span></label>
+          <select id="i-jobworker"><option value="">Select Jobworker</option></select>
+        </div>
+        <div class="fg">
+          <label>Challan No<span class="req">*</span></label>
+          <input type="text" id="i-challan" placeholder="e.g. CH-2026-001">
+        </div>
+      </div>
+
+      <div class="form-row r4">
+        <div class="fg">
+          <label>Brand<span class="req">*</span></label>
+          <select id="i-brand"><option value="">Select Brand</option></select>
+        </div>
+        <div class="fg">
+          <label>Item Name<span class="req">*</span></label>
+          <select id="i-itemname"><option value="">Select Item</option></select>
+        </div>
+        <div class="fg">
+          <label>Size<span class="req">*</span></label>
+          <select id="i-size"><option value="">Select Size</option></select>
+        </div>
+        <div class="fg">
+          <label>Process<span class="req">*</span></label>
+          <select id="i-process" onchange="onProcessChange()"><option value="">Select Process</option></select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="fg">
+          <label>Ref No (auto)</label>
+          <input type="text" id="i-ref-display" disabled placeholder="Auto-assigned on save">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quantities & Rate</div>
+
+      <div class="form-row r4">
+        <div class="fg">
+          <label>Outward Qty<span class="req">*</span></label>
+          <input type="number" id="i-outward" placeholder="0" min="0" step="any" oninput="recomputeAll()">
+        </div>
+        <div class="fg">
+          <label>Inward Qty<span class="req">*</span></label>
+          <input type="number" id="i-inward" placeholder="0" min="0" step="any" oninput="recomputeAll()">
+        </div>
+        <div class="fg">
+          <label>Rate (₹)<span class="req">*</span></label>
+          <input type="number" id="i-rate" placeholder="0" min="0" step="any" oninput="recomputeAll()">
+        </div>
+        <div class="fg">
+          <label>Amount (₹) <span style="text-transform:none;color:#028090;font-weight:500">editable</span></label>
+          <input type="number" id="i-amount" placeholder="0" min="0" step="any" oninput="onAmountEdited()">
+        </div>
+      </div>
+
+      <div class="expense-summary" id="expense-summary">
+        <div class="expense-summary-row"><span>Outward Qty</span><span id="sum-outward">0</span></div>
+        <div class="expense-summary-row"><span>Inward Qty</span><span id="sum-inward">0</span></div>
+        <div class="expense-summary-row"><span>Wastage / Shortage</span><span id="sum-wastage">0 (0%)</span></div>
+        <div class="expense-summary-row"><span>Rate × Inward Qty</span><span id="sum-calc">₹0</span></div>
+        <div class="expense-summary-row total"><span>Amount Payable</span><span id="sum-total">₹0</span></div>
+      </div>
+      <div id="wastage-alert" class="wastage-alert"></div>
+
+      <div class="form-row" style="margin-top:14px">
+        <div class="fg">
+          <label>Notes (optional)</label>
+          <textarea id="i-notes" rows="2" placeholder="Any remarks"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="resetAddForm()">Reset</button>
+      <button class="btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+
+  <!-- ENTRY LOG TAB -->
+  <div id="tab-log" style="display:none">
+    <div class="card">
+      <div class="toprow">
+        <div class="card-title" style="margin-bottom:0">Entry Log</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-export" onclick="exportLogCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <input type="text" class="search-box" id="trip-search" placeholder="Search by jobworker, challan, item, ref, staff..." oninput="renderLog()">
+      </div>
+
+      <div class="filter-row" id="status-filter">
+        <button class="chip active" onclick="setLogFilter('all',this)">All</button>
+        <button class="chip" onclick="setLogFilter('pending',this)">Pending</button>
+        <button class="chip" onclick="setLogFilter('approved',this)">Approved</button>
+        <button class="chip" onclick="setLogFilter('rejected',this)">Rejected</button>
+      </div>
+
+      <div id="log-empty" class="empty-state">No entries yet.</div>
+      <div class="table-wrap" id="log-table-wrap" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th><th>Date</th><th>Jobworker</th><th>Challan</th>
+              <th>Brand</th><th>Item</th><th>Size</th><th>Process</th><th>Out</th><th>In</th><th>Waste</th>
+              <th>Rate</th><th>Amount</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody"></tbody>
+          <tfoot id="log-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVAL TAB -->
+  <div id="tab-approval" style="display:none">
+    <div class="card">
+      <div class="toprow">
+        <div class="card-title" style="margin-bottom:0">Approval Queue</div>
+        <button class="btn-sm btn-approve" id="appr-bulk-btn" style="padding:8px 16px;font-size:13px;display:none" onclick="bulkApprove()">Approve All</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Review each entry, then approve or reject.</p>
+      <div id="appr-empty" class="empty-state">No pending approvals.</div>
+      <div class="table-wrap" id="appr-table-wrap" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th><th>Date</th><th>Jobworker</th><th>Challan</th>
+              <th>Brand</th><th>Item</th><th>Size</th><th>Process</th><th>Out / In</th><th>Waste</th><th>Amount</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="appr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- OWNER DASHBOARD TAB -->
+  <div id="tab-owner" style="display:none">
+    <div class="card">
+      <div class="filter-row" id="owner-chips">
+        <button class="chip active" onclick="switchOwnerView('summary',this)">Summary</button>
+        <button class="chip" onclick="switchOwnerView('jobworker',this)">By Jobworker</button>
+        <button class="chip" onclick="switchOwnerView('brand',this)">By Brand</button>
+        <button class="chip" onclick="switchOwnerView('itemName',this)">By Item</button>
+        <button class="chip" onclick="switchOwnerView('size',this)">By Size</button>
+        <button class="chip" onclick="switchOwnerView('process',this)">By Process</button>
+        <button class="chip" onclick="switchOwnerView('mom',this)">Month Vs Month</button>
+        <button class="chip" onclick="switchOwnerView('wastage',this)">Wastage Analysis</button>
+        <button class="chip" onclick="switchOwnerView('closing',this)">Monthly Closing</button>
+      </div>
+
+      <div class="form-row r2" style="margin-bottom:16px">
+        <div class="fg">
+          <label>Period</label>
+          <select id="owner-period" onchange="renderOwner()">
+            <option value="this-month">This Month</option>
+            <option value="last-month">Last Month</option>
+            <option value="last-3-months">Last 3 Months</option>
+            <option value="this-year">This Year</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Status Filter</label>
+          <select id="owner-status" onchange="renderOwner()">
+            <option value="approved">Approved only</option>
+            <option value="all">All statuses</option>
+            <option value="pending">Pending only</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="owner-body"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+      <div class="card-title">Google Sheet Connection</div>
+      <div class="setting-row">
+        <div class="setting-label">Web App URL</div>
+        <div class="setting-input"><input type="text" id="set-url" placeholder="https://script.google.com/macros/s/..."></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="testConnection()">Test Connection</button>
+        <button class="btn-primary" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Users</div>
+      <div id="users-list"></div>
+      <button class="btn-ghost" style="margin-top:12px" onclick="openUserModal()">+ Add User</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Brands / Items / Sizes / Processes / Jobworkers</div>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:14px">
+        These lists are managed directly in your Google Sheet. Open the sheet and edit the
+        <b>Brands</b>, <b>Items</b>, <b>Sizes</b>, <b>Processes</b>, or <b>Jobworkers</b> tabs.
+        Then click the <b>↻ Refresh Lists</b> button in the topbar (or below) to pull the changes into the app.
+      </p>
+      <div id="lists-counts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:12.5px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn-ghost" onclick="refreshLists()">↻ Refresh Lists</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Wastage Thresholds</div>
+      <div class="setting-row">
+        <div class="setting-label">Warning at</div>
+        <div class="setting-input"><input type="number" id="set-waste-warn" step="0.1" placeholder="2"></div>
+        <div class="setting-desc">% — shows yellow alert</div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Danger at</div>
+        <div class="setting-input"><input type="number" id="set-waste-danger" step="0.1" placeholder="5"></div>
+        <div class="setting-desc">% — shows red alert, requires approval</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="saveWasteThresholds()">Save Thresholds</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeModal('detail-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="detail-title">Entry Details</h3>
+      <button class="modal-close" onclick="closeModal('detail-modal')">×</button>
+    </div>
+    <div id="detail-body"></div>
+    <div id="detail-actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="reject-modal" onclick="if(event.target===this)closeModal('reject-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Reject Entry</h3>
+      <button class="modal-close" onclick="closeModal('reject-modal')">×</button>
+    </div>
+    <div class="fg">
+      <label>Reason</label>
+      <textarea id="reject-remark" rows="3" placeholder="Enter rejection reason"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closeModal('reject-modal')">Cancel</button>
+      <button class="btn-primary" style="background:#EF4444" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic Edit Modal for Users / Jobworkers / Items -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeModal('edit-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="edit-title">Edit</h3>
+      <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
+    </div>
+    <div id="edit-body"></div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEditModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Jobwork Expense Tracker — Frontend
+// ═══════════════════════════════════════════════════════════════════════════
+
+const LS_URL       = 'jw_sheet_url';
+const LS_USER      = 'jw_current_user';
+const LS_ENTRIES   = 'jw_entries';
+const LS_USERS     = 'jw_users';
+const LS_JW        = 'jw_jobworkers';
+const LS_BRANDS    = 'jw_brands';
+const LS_ITEMS     = 'jw_items';
+const LS_SIZES     = 'jw_sizes';
+const LS_PROCESSES = 'jw_processes';
+const LS_CLOSED    = 'jw_closed';
+const LS_DARK      = 'jw_dark';
+const LS_WASTE     = 'jw_waste_thresholds';
+
+let state = {
+  sheetUrl: localStorage.getItem(LS_URL) || '',
+  user: JSON.parse(localStorage.getItem(LS_USER) || 'null'),
+  entries: JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]'),
+  users: JSON.parse(localStorage.getItem(LS_USERS) || '[{"username":"admin","password":"admin123","fullname":"Admin","role":"owner"}]'),
+  jobworkers: JSON.parse(localStorage.getItem(LS_JW) || '[]'),
+  brands: JSON.parse(localStorage.getItem(LS_BRANDS) || '[]'),
+  items: JSON.parse(localStorage.getItem(LS_ITEMS) || '[]'),
+  sizes: JSON.parse(localStorage.getItem(LS_SIZES) || '[]'),
+  processes: JSON.parse(localStorage.getItem(LS_PROCESSES) || '[{"name":"Handle Pasting","defaultRate":0,"unit":"pcs"},{"name":"Tape Pasting","defaultRate":0,"unit":"pcs"},{"name":"Manual Bag Formation","defaultRate":0,"unit":"pcs"},{"name":"Other","defaultRate":0,"unit":"pcs"}]'),
+  closedMonths: JSON.parse(localStorage.getItem(LS_CLOSED) || '[]'),
+  wasteThresholds: JSON.parse(localStorage.getItem(LS_WASTE) || '{"warn":2,"danger":5}'),
+  logFilter: 'all',
+  ownerView: 'summary',
+  amountEdited: false,
+  editContext: null
+};
+
+function persist() {
+  localStorage.setItem(LS_ENTRIES, JSON.stringify(state.entries));
+  localStorage.setItem(LS_USERS, JSON.stringify(state.users));
+  localStorage.setItem(LS_JW, JSON.stringify(state.jobworkers));
+  localStorage.setItem(LS_BRANDS, JSON.stringify(state.brands));
+  localStorage.setItem(LS_ITEMS, JSON.stringify(state.items));
+  localStorage.setItem(LS_SIZES, JSON.stringify(state.sizes));
+  localStorage.setItem(LS_PROCESSES, JSON.stringify(state.processes));
+  localStorage.setItem(LS_CLOSED, JSON.stringify(state.closedMonths));
+  localStorage.setItem(LS_WASTE, JSON.stringify(state.wasteThresholds));
+}
+
+// ── ONLINE/OFFLINE ──────────────────────────────────────────────────────────
+function updateOnline() {
+  document.getElementById('offline-banner').style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+
+// ── DARK MODE ───────────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem(LS_DARK, document.body.classList.contains('dark') ? '1' : '0');
+}
+if (localStorage.getItem(LS_DARK) === '1') document.body.classList.add('dark');
+
+// ── LOGIN ───────────────────────────────────────────────────────────────────
+function loginUser() {
+  const name = document.getElementById('login-name').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  const u = state.users.find(u => u.username.toLowerCase() === name.toLowerCase() && u.password === pass);
+  if (!u) {
+    err.textContent = 'Invalid username or password.';
+    err.style.display = 'block';
+    return;
+  }
+  state.user = u;
+  localStorage.setItem(LS_USER, JSON.stringify(u));
+  err.style.display = 'none';
+  showApp();
+  // Try loading fresh data from sheet in background
+  if (state.sheetUrl) { loadEverything(); }
+}
+
+function logout() {
+  state.user = null;
+  localStorage.removeItem(LS_USER);
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('topbar-right').style.display = 'none';
+}
+
+function toggleUserMenu(e) {
+  e && e.stopPropagation();
+  const m = document.getElementById('user-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function closeUserMenu() { document.getElementById('user-menu').style.display = 'none'; }
+document.addEventListener('click', e => {
+  if (!e.target.closest('#user-menu') && !e.target.closest('#user-pill')) closeUserMenu();
+});
+
+// ── SHOW APP ────────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('topbar-right').style.display = 'flex';
+  document.getElementById('user-name-display').textContent = state.user.fullname || state.user.username;
+  document.getElementById('i-staff').value = state.user.username;
+
+  // Role-based tab visibility
+  const role = state.user.role;
+  document.getElementById('tab-btn-approval').style.display = (role === 'owner' || role === 'admin') ? '' : 'none';
+  document.getElementById('tab-btn-owner').style.display   = (role === 'owner') ? '' : 'none';
+  document.getElementById('tab-btn-settings').style.display= (role === 'owner') ? '' : 'none';
+
+  // Default date
+  const today = new Date();
+  document.getElementById('i-date').value = today.toISOString().slice(0,10);
+
+  refreshDropdowns();
+  renderAll();
+}
+
+// ── DROPDOWNS ───────────────────────────────────────────────────────────────
+function refreshDropdowns() {
+  const jw = document.getElementById('i-jobworker');
+  jw.innerHTML = '<option value="">Select Jobworker</option>' +
+    state.jobworkers.map(j => `<option value="${esc(j.name)}">${esc(j.name)}</option>`).join('');
+
+  // If user is a jobworker, lock to their jobworker
+  if (state.user.role === 'jobworker' && state.user.jobworkerName) {
+    jw.value = state.user.jobworkerName;
+    jw.disabled = true;
+  } else {
+    jw.disabled = false;
+  }
+
+  const br = document.getElementById('i-brand');
+  br.innerHTML = '<option value="">Select Brand</option>' +
+    state.brands.map(b => `<option value="${esc(b.name)}">${esc(b.name)}</option>`).join('');
+
+  const it = document.getElementById('i-itemname');
+  it.innerHTML = '<option value="">Select Item</option>' +
+    state.items.map(i => `<option value="${esc(i.name)}">${esc(i.name)}</option>`).join('');
+
+  const sz = document.getElementById('i-size');
+  sz.innerHTML = '<option value="">Select Size</option>' +
+    state.sizes.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+
+  const pr = document.getElementById('i-process');
+  pr.innerHTML = '<option value="">Select Process</option>' +
+    state.processes.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+}
+
+function onProcessChange() {
+  const name = document.getElementById('i-process').value;
+  const p = state.processes.find(x => x.name === name);
+  if (p && p.defaultRate > 0) {
+    const rateEl = document.getElementById('i-rate');
+    if (!rateEl.value) { rateEl.value = p.defaultRate; recomputeAll(); }
+  }
+}
+
+// ── FORM COMPUTE ────────────────────────────────────────────────────────────
+function onAmountEdited() {
+  state.amountEdited = true;
+  updateSummary();
+}
+
+function recomputeAll() {
+  const out  = Number(document.getElementById('i-outward').value)||0;
+  const ins  = Number(document.getElementById('i-inward').value)||0;
+  const rate = Number(document.getElementById('i-rate').value)||0;
+  if (!state.amountEdited) {
+    document.getElementById('i-amount').value = (ins * rate).toFixed(2);
+  }
+  updateSummary();
+}
+
+function updateSummary() {
+  const out  = Number(document.getElementById('i-outward').value)||0;
+  const ins  = Number(document.getElementById('i-inward').value)||0;
+  const rate = Number(document.getElementById('i-rate').value)||0;
+  const amt  = Number(document.getElementById('i-amount').value)||0;
+  const waste = out - ins;
+  const wastePct = out > 0 ? (waste/out)*100 : 0;
+  document.getElementById('sum-outward').textContent = out.toFixed(2);
+  document.getElementById('sum-inward').textContent  = ins.toFixed(2);
+  document.getElementById('sum-wastage').textContent = `${waste.toFixed(2)} (${wastePct.toFixed(2)}%)`;
+  document.getElementById('sum-calc').textContent    = '₹' + fmt(ins*rate);
+  document.getElementById('sum-total').textContent   = '₹' + fmt(amt);
+
+  // Wastage alert
+  const alertEl = document.getElementById('wastage-alert');
+  alertEl.className = 'wastage-alert';
+  const {warn, danger} = state.wasteThresholds;
+  if (out === 0 && ins === 0) { alertEl.style.display = 'none'; return; }
+  if (waste < 0) {
+    alertEl.className = 'wastage-alert warn';
+    alertEl.innerHTML = `⚠ Inward is greater than outward (${Math.abs(waste).toFixed(2)} extra). Please double-check.`;
+  } else if (wastePct >= danger) {
+    alertEl.className = 'wastage-alert danger';
+    alertEl.innerHTML = `🚨 High wastage: ${wastePct.toFixed(2)}% (threshold ${danger}%). Owner approval recommended.`;
+  } else if (wastePct >= warn) {
+    alertEl.className = 'wastage-alert warn';
+    alertEl.innerHTML = `⚠ Elevated wastage: ${wastePct.toFixed(2)}% (threshold ${warn}%).`;
+  } else {
+    alertEl.className = 'wastage-alert ok';
+    alertEl.innerHTML = `✓ Wastage ${wastePct.toFixed(2)}% is within acceptable range.`;
+  }
+}
+
+function resetAddForm() {
+  ['i-challan','i-outward','i-inward','i-rate','i-amount','i-notes','i-ref-display'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('i-brand').value = '';
+  document.getElementById('i-itemname').value = '';
+  document.getElementById('i-size').value = '';
+  document.getElementById('i-process').value = '';
+  if (!document.getElementById('i-jobworker').disabled) document.getElementById('i-jobworker').value = '';
+  document.getElementById('i-date').value = new Date().toISOString().slice(0,10);
+  state.amountEdited = false;
+  updateSummary();
+  document.getElementById('wastage-alert').style.display = 'none';
+}
+
+// ── SAVE ENTRY ──────────────────────────────────────────────────────────────
+async function saveEntry() {
+  const date       = document.getElementById('i-date').value;
+  const jobworker  = document.getElementById('i-jobworker').value.trim();
+  const challan    = document.getElementById('i-challan').value.trim();
+  const brand      = document.getElementById('i-brand').value.trim();
+  const itemName   = document.getElementById('i-itemname').value.trim();
+  const size       = document.getElementById('i-size').value.trim();
+  const process    = document.getElementById('i-process').value.trim();
+  const outward    = Number(document.getElementById('i-outward').value)||0;
+  const inward     = Number(document.getElementById('i-inward').value)||0;
+  const rate       = Number(document.getElementById('i-rate').value)||0;
+  const amount     = Number(document.getElementById('i-amount').value)||0;
+  const notes      = document.getElementById('i-notes').value.trim();
+
+  if (!date)      return notify('Date is required','error');
+  if (!jobworker) return notify('Select a jobworker','error');
+  if (!challan)   return notify('Challan No is required','error');
+  if (!brand)     return notify('Select a brand','error');
+  if (!itemName)  return notify('Select an item','error');
+  if (!size)      return notify('Select a size','error');
+  if (!process)   return notify('Select a process','error');
+  if (outward <= 0) return notify('Outward Qty must be > 0','error');
+  if (inward < 0)   return notify('Inward Qty cannot be negative','error');
+  if (rate <= 0)    return notify('Rate must be > 0','error');
+
+  // Check closed month
+  const ym = date.slice(0,7);
+  if (state.closedMonths.some(m => m.month === ym) && state.user.role !== 'owner') {
+    return notify(`${ym} is closed. Only the owner can reopen it.`,'error');
+  }
+
+  // Auto Ref No — try server, fallback to local
+  let refNo = '';
+  try {
+    if (state.sheetUrl) {
+      const res = await fetch(state.sheetUrl + '?action=nextCounter&key=jobwork', { method:'GET' });
+      const j = await res.json();
+      if (j && j.value) refNo = 'JW-' + String(j.value).padStart(4,'0');
+    }
+  } catch(e) { /* fall through */ }
+  if (!refNo) {
+    const maxLocal = state.entries.reduce((m,e) => {
+      const n = Number((e.ref||'').replace(/\D/g,''))||0;
+      return Math.max(m,n);
+    }, 0);
+    refNo = 'JW-' + String(maxLocal+1).padStart(4,'0');
+  }
+
+  const waste = outward - inward;
+  const wastePct = outward > 0 ? (waste/outward)*100 : 0;
+
+  const role = state.user.role;
+  let status = 'pending';
+  if (role === 'owner') status = 'approved';
+  else if (role === 'admin' && wastePct < state.wasteThresholds.danger) status = 'auto-approved';
+
+  const entry = {
+    id: Date.now().toString(),
+    ref: refNo,
+    date, staff: state.user.username, role,
+    jobworker, challan, brand, itemName, size, process,
+    outwardQty: outward, inwardQty: inward,
+    wastage: waste, wastagePct: Number(wastePct.toFixed(2)),
+    rate, amount,
+    status,
+    approvedAt: (status !== 'pending') ? new Date().toLocaleString('en-IN') : '',
+    approvedBy: (status !== 'pending') ? state.user.username : '',
+    rejectionRemark: '',
+    notes,
+    submittedAt: new Date().toLocaleString('en-IN')
+  };
+
+  state.entries.unshift(entry);
+  persist();
+  renderAll();
+  resetAddForm();
+  notify(`Entry saved (${refNo}). ${status === 'pending' ? 'Awaiting approval.' : 'Auto-approved.'}`,'success');
+
+  if (state.sheetUrl) pushEntry(entry);
+}
+
+async function pushEntry(entry) {
+  try {
+    const res = await fetch(state.sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ entry })
+    });
+    const j = await res.json();
+    if (!j.success) throw new Error(j.error || 'Unknown error');
+  } catch(e) {
+    notify('Saved locally. Failed to sync: ' + e.message, 'warn');
+  }
+}
+
+// ── SYNC ────────────────────────────────────────────────────────────────────
+async function syncToSheet() {
+  if (!state.sheetUrl) return notify('Set the Web App URL in Settings first','error');
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true; btn.textContent = 'Syncing...';
+  try {
+    // Push all local entries
+    const res = await fetch(state.sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ entries: state.entries })
+    });
+    const j = await res.json();
+    if (!j.success) throw new Error(j.error);
+    // Pull fresh
+    await loadEverything();
+    notify(`Synced: ${j.added||0} added, ${j.updated||0} updated`,'success');
+  } catch(e) {
+    notify('Sync failed: '+e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sync To Sheet';
+  }
+}
+
+async function loadEverything() {
+  if (!state.sheetUrl) return;
+  try {
+    const [entriesRes, usersRes, jwRes, brandsRes, itemsRes, sizesRes, processesRes, monthsRes] = await Promise.all([
+      fetch(state.sheetUrl + '?action=getAll').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getUsers').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getJobworkers').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getBrands').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getItems').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getSizes').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getProcesses').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getClosedMonths').then(r=>r.json())
+    ]);
+    if (entriesRes.entries) state.entries = entriesRes.entries;
+    if (usersRes.users && usersRes.users.length) state.users = usersRes.users;
+    if (jwRes.jobworkers) state.jobworkers = jwRes.jobworkers;
+    if (brandsRes.brands) state.brands = brandsRes.brands;
+    if (itemsRes.items) state.items = itemsRes.items;
+    if (sizesRes.sizes) state.sizes = sizesRes.sizes;
+    if (processesRes.processes && processesRes.processes.length) state.processes = processesRes.processes;
+    if (monthsRes.months) state.closedMonths = monthsRes.months;
+    persist();
+    refreshDropdowns();
+    renderAll();
+  } catch(e) {
+    console.error('Load failed', e);
+  }
+}
+
+async function refreshLists() {
+  if (!state.sheetUrl) return notify('Set the Web App URL in Settings first','error');
+  const btn = document.getElementById('refresh-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Refreshing...';
+  try {
+    const [jwRes, brandsRes, itemsRes, sizesRes, processesRes] = await Promise.all([
+      fetch(state.sheetUrl + '?action=getJobworkers').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getBrands').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getItems').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getSizes').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getProcesses').then(r=>r.json())
+    ]);
+    if (jwRes.jobworkers) state.jobworkers = jwRes.jobworkers;
+    if (brandsRes.brands) state.brands = brandsRes.brands;
+    if (itemsRes.items) state.items = itemsRes.items;
+    if (sizesRes.sizes) state.sizes = sizesRes.sizes;
+    if (processesRes.processes) state.processes = processesRes.processes;
+    persist();
+    refreshDropdowns();
+    renderListsCounts();
+    notify(`Lists refreshed: ${state.jobworkers.length} jobworkers, ${state.brands.length} brands, ${state.items.length} items, ${state.sizes.length} sizes, ${state.processes.length} processes`,'success');
+  } catch(e) {
+    notify('Refresh failed: '+e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('#main-tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['add','log','approval','owner','settings'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = (t === id) ? 'block' : 'none';
+  });
+  if (id === 'log') renderLog();
+  if (id === 'approval') renderApproval();
+  if (id === 'owner') renderOwner();
+  if (id === 'settings') renderSettings();
+}
+
+// ── RENDER ALL ──────────────────────────────────────────────────────────────
+function renderAll() {
+  renderMetrics();
+  renderLog();
+  renderApproval();
+  updateSummary();
+}
+
+function renderMetrics() {
+  const today = new Date().toISOString().slice(0,10);
+  const ym = today.slice(0,7);
+  let todayAmt = 0, monthAmt = 0, pending = 0, approvedToday = 0;
+  const visible = visibleEntries();
+  visible.forEach(e => {
+    if (e.status === 'deleted' || e.status === 'rejected') return;
+    if (e.date === today) todayAmt += e.amount;
+    if ((e.date||'').slice(0,7) === ym) monthAmt += e.amount;
+    if (e.status === 'pending') pending++;
+    if ((e.status === 'approved' || e.status === 'auto-approved') && (e.approvedAt||'').includes(formatDateForDisplay(today))) approvedToday++;
+  });
+  document.getElementById('s-today').textContent = '₹' + fmt(todayAmt);
+  document.getElementById('s-month').textContent = '₹' + fmt(monthAmt);
+  document.getElementById('s-pending').textContent = pending;
+  document.getElementById('s-approved').textContent = approvedToday;
+
+  const pbBadge = document.getElementById('pb-badge');
+  if (pending > 0 && (state.user.role === 'owner' || state.user.role === 'admin')) {
+    pbBadge.textContent = pending;
+    pbBadge.style.display = 'inline-block';
+  } else {
+    pbBadge.style.display = 'none';
+  }
+}
+
+function visibleEntries() {
+  // Owner/admin sees all, jobworker sees only their own
+  if (state.user.role === 'owner' || state.user.role === 'admin') return state.entries;
+  return state.entries.filter(e => e.staff === state.user.username);
+}
+
+// ── LOG ─────────────────────────────────────────────────────────────────────
+function setLogFilter(f, btn) {
+  state.logFilter = f;
+  document.querySelectorAll('#status-filter .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderLog();
+}
+
+function renderLog() {
+  const q = (document.getElementById('trip-search').value||'').toLowerCase();
+  let rows = visibleEntries().filter(e => e.status !== 'deleted');
+  if (state.logFilter !== 'all') {
+    if (state.logFilter === 'approved') rows = rows.filter(e => e.status === 'approved' || e.status === 'auto-approved');
+    else rows = rows.filter(e => e.status === state.logFilter);
+  }
+  if (q) {
+    rows = rows.filter(e =>
+      (e.jobworker||'').toLowerCase().includes(q) ||
+      (e.challan||'').toLowerCase().includes(q) ||
+      (e.brand||'').toLowerCase().includes(q) ||
+      (e.itemName||'').toLowerCase().includes(q) ||
+      (e.size||'').toLowerCase().includes(q) ||
+      (e.process||'').toLowerCase().includes(q) ||
+      (e.ref||'').toLowerCase().includes(q) ||
+      (e.staff||'').toLowerCase().includes(q)
+    );
+  }
+  rows.sort((a,b) => (b.date||'').localeCompare(a.date||'') || Number(b.id)-Number(a.id));
+
+  const tbody = document.getElementById('log-tbody');
+  const empty = document.getElementById('log-empty');
+  const wrap  = document.getElementById('log-table-wrap');
+  if (!rows.length) { empty.style.display = 'block'; wrap.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = 'block';
+
+  tbody.innerHTML = rows.map(e => `
+    <tr onclick="openDetail('${e.id}')" style="cursor:pointer">
+      <td><b>${esc(e.ref||'')}</b></td>
+      <td>${esc(e.date||'')}</td>
+      <td>${esc(e.jobworker||'')}</td>
+      <td>${esc(e.challan||'')}</td>
+      <td>${esc(e.brand||'')}</td>
+      <td>${esc(e.itemName||'')}</td>
+      <td>${esc(e.size||'')}</td>
+      <td>${esc(e.process||'')}</td>
+      <td>${e.outwardQty||0}</td>
+      <td>${e.inwardQty||0}</td>
+      <td>${wastageBadge(e)}</td>
+      <td>₹${fmt(e.rate||0)}</td>
+      <td><b>₹${fmt(e.amount||0)}</b></td>
+      <td>${statusBadge(e.status)}</td>
+      <td>${(state.user.role==='owner'||state.user.role==='admin')?`<button class="del-btn" onclick="event.stopPropagation();deleteEntry('${e.id}')" title="Delete">🗑</button>`:''}</td>
+    </tr>
+  `).join('');
+
+  // Footer totals
+  const totalOut = rows.reduce((s,e)=>s+(e.outwardQty||0),0);
+  const totalIn  = rows.reduce((s,e)=>s+(e.inwardQty||0),0);
+  const totalAmt = rows.reduce((s,e)=>s+(e.amount||0),0);
+  document.getElementById('log-tfoot').innerHTML = `
+    <tr class="tfoot-row"><td colspan="7">Totals (${rows.length} entries)</td>
+    <td>${totalOut.toFixed(2)}</td><td>${totalIn.toFixed(2)}</td><td>${(totalOut-totalIn).toFixed(2)}</td><td>—</td><td>₹${fmt(totalAmt)}</td><td colspan="2"></td></tr>`;
+}
+
+function wastageBadge(e) {
+  const pct = e.wastagePct || 0;
+  const {warn, danger} = state.wasteThresholds;
+  let color = '#065F46', bg = '#D1FAE5';
+  if (pct >= danger) { color = '#991B1B'; bg = '#FEE2E2'; }
+  else if (pct >= warn) { color = '#92400E'; bg = '#FEF3C7'; }
+  return `<span style="background:${bg};color:${color};padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700">${(e.wastage||0).toFixed(1)} (${pct.toFixed(1)}%)</span>`;
+}
+
+function statusBadge(s) {
+  const cls = 'b-' + (s || 'pending').replace('_','-');
+  const label = (s || 'pending').replace('-',' ');
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ── DETAIL MODAL ────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const e = state.entries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('detail-title').textContent = `Entry ${e.ref || ''}`;
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-row"><span class="dl">Date</span><span class="dr">${esc(e.date||'')}</span></div>
+    <div class="detail-row"><span class="dl">Jobworker</span><span class="dr">${esc(e.jobworker||'')}</span></div>
+    <div class="detail-row"><span class="dl">Challan No</span><span class="dr">${esc(e.challan||'')}</span></div>
+    <div class="detail-row"><span class="dl">Brand</span><span class="dr">${esc(e.brand||'')}</span></div>
+    <div class="detail-row"><span class="dl">Item Name</span><span class="dr">${esc(e.itemName||'')}</span></div>
+    <div class="detail-row"><span class="dl">Size</span><span class="dr">${esc(e.size||'')}</span></div>
+    <div class="detail-row"><span class="dl">Process</span><span class="dr">${esc(e.process||'')}</span></div>
+    <div class="detail-row"><span class="dl">Outward Qty</span><span class="dr">${e.outwardQty||0}</span></div>
+    <div class="detail-row"><span class="dl">Inward Qty</span><span class="dr">${e.inwardQty||0}</span></div>
+    <div class="detail-row"><span class="dl">Wastage</span><span class="dr">${wastageBadge(e)}</span></div>
+    <div class="detail-row"><span class="dl">Rate</span><span class="dr">₹${fmt(e.rate||0)}</span></div>
+    <div class="detail-row"><span class="dl">Amount</span><span class="dr" style="color:#028090;font-size:15px">₹${fmt(e.amount||0)}</span></div>
+    <div class="detail-row"><span class="dl">Status</span><span class="dr">${statusBadge(e.status)}</span></div>
+    <div class="detail-row"><span class="dl">Submitted by</span><span class="dr">${esc(e.staff||'')}</span></div>
+    <div class="detail-row"><span class="dl">Submitted at</span><span class="dr">${esc(e.submittedAt||'')}</span></div>
+    ${e.approvedBy ? `<div class="detail-row"><span class="dl">Approved by</span><span class="dr">${esc(e.approvedBy)} @ ${esc(e.approvedAt||'')}</span></div>` : ''}
+    ${e.rejectionRemark ? `<div class="detail-row"><span class="dl">Rejection</span><span class="dr" style="color:#991B1B">${esc(e.rejectionRemark)}</span></div>` : ''}
+    ${e.notes ? `<div class="detail-row"><span class="dl">Notes</span><span class="dr">${esc(e.notes)}</span></div>` : ''}
+  `;
+
+  const actions = document.getElementById('detail-actions');
+  actions.innerHTML = '';
+  if ((state.user.role === 'owner' || state.user.role === 'admin') && e.status === 'pending') {
+    actions.innerHTML = `
+      <button class="btn-sm btn-approve" style="padding:10px 18px;font-size:13px" onclick="approveEntry('${e.id}')">✓ Approve</button>
+      <button class="btn-sm btn-reject" style="padding:10px 18px;font-size:13px" onclick="openRejectModal('${e.id}')">✗ Reject</button>
+    `;
+  }
+  openModal('detail-modal');
+}
+
+// ── APPROVAL ────────────────────────────────────────────────────────────────
+function renderApproval() {
+  const role = state.user.role;
+  if (role !== 'owner' && role !== 'admin') return;
+  const rows = state.entries.filter(e => e.status === 'pending');
+  const empty = document.getElementById('appr-empty');
+  const wrap  = document.getElementById('appr-table-wrap');
+  const bulkBtn = document.getElementById('appr-bulk-btn');
+  if (!rows.length) { empty.style.display = 'block'; wrap.style.display = 'none'; bulkBtn.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = 'block'; bulkBtn.style.display = 'inline-block';
+  document.getElementById('appr-tbody').innerHTML = rows.map(e => `
+    <tr onclick="openDetail('${e.id}')" style="cursor:pointer">
+      <td><b>${esc(e.ref||'')}</b></td>
+      <td>${esc(e.date||'')}</td>
+      <td>${esc(e.jobworker||'')}</td>
+      <td>${esc(e.challan||'')}</td>
+      <td>${esc(e.brand||'')}</td>
+      <td>${esc(e.itemName||'')}</td>
+      <td>${esc(e.size||'')}</td>
+      <td>${esc(e.process||'')}</td>
+      <td>${e.outwardQty||0} / ${e.inwardQty||0}</td>
+      <td>${wastageBadge(e)}</td>
+      <td><b>₹${fmt(e.amount||0)}</b></td>
+      <td>
+        <button class="btn-sm btn-approve" onclick="event.stopPropagation();approveEntry('${e.id}')">✓</button>
+        <button class="btn-sm btn-reject" onclick="event.stopPropagation();openRejectModal('${e.id}')">✗</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function approveEntry(id) {
+  const e = state.entries.find(x => x.id === id);
+  if (!e) return;
+  e.status = 'approved';
+  e.approvedAt = new Date().toLocaleString('en-IN');
+  e.approvedBy = state.user.username;
+  persist();
+  renderAll();
+  closeModal('detail-modal');
+  notify('Approved: ' + (e.ref||''), 'success');
+  if (state.sheetUrl) pushEntry(e);
+}
+
+function bulkApprove() {
+  const rows = state.entries.filter(e => e.status === 'pending');
+  if (!rows.length) return;
+  if (!confirm(`Approve all ${rows.length} pending entries?`)) return;
+  rows.forEach(e => {
+    e.status = 'approved';
+    e.approvedAt = new Date().toLocaleString('en-IN');
+    e.approvedBy = state.user.username;
+  });
+  persist();
+  renderAll();
+  notify(`Approved ${rows.length} entries`, 'success');
+  if (state.sheetUrl) {
+    fetch(state.sheetUrl, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body: JSON.stringify({ entries: rows })
+    }).catch(()=>{});
+  }
+}
+
+let rejectTargetId = null;
+function openRejectModal(id) {
+  rejectTargetId = id;
+  document.getElementById('reject-remark').value = '';
+  openModal('reject-modal');
+  closeModal('detail-modal');
+}
+function confirmReject() {
+  const remark = document.getElementById('reject-remark').value.trim();
+  if (!remark) return notify('Reason required','error');
+  const e = state.entries.find(x => x.id === rejectTargetId);
+  if (!e) return;
+  e.status = 'rejected';
+  e.rejectionRemark = remark;
+  e.approvedAt = new Date().toLocaleString('en-IN');
+  e.approvedBy = state.user.username;
+  persist();
+  renderAll();
+  closeModal('reject-modal');
+  notify('Rejected: '+(e.ref||''),'success');
+  if (state.sheetUrl) pushEntry(e);
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  const e = state.entries.find(x => x.id === id);
+  if (!e) return;
+  e.status = 'deleted';
+  persist();
+  renderAll();
+  if (state.sheetUrl) pushEntry(e);
+}
+
+// ── OWNER DASHBOARD ─────────────────────────────────────────────────────────
+function switchOwnerView(v, btn) {
+  state.ownerView = v;
+  document.querySelectorAll('#owner-chips .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderOwner();
+}
+
+function filteredEntriesForOwner() {
+  const period = document.getElementById('owner-period').value;
+  const status = document.getElementById('owner-status').value;
+  const now = new Date();
+  let from = null, to = null;
+  if (period === 'this-month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  } else if (period === 'last-month') {
+    from = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    to = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else if (period === 'last-3-months') {
+    from = new Date(now.getFullYear(), now.getMonth()-2, 1);
+    to = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  } else if (period === 'this-year') {
+    from = new Date(now.getFullYear(), 0, 1);
+    to = new Date(now.getFullYear(), 11, 31);
+  }
+  return state.entries.filter(e => {
+    if (e.status === 'deleted') return false;
+    if (status === 'approved' && !(e.status === 'approved' || e.status === 'auto-approved')) return false;
+    if (status === 'pending' && e.status !== 'pending') return false;
+    if (from && e.date) {
+      const d = new Date(e.date);
+      if (d < from || d > to) return false;
+    }
+    return true;
+  });
+}
+
+function renderOwner() {
+  const rows = filteredEntriesForOwner();
+  const body = document.getElementById('owner-body');
+  if (state.ownerView === 'summary') {
+    const totalAmt = rows.reduce((s,e)=>s+(e.amount||0),0);
+    const totalOut = rows.reduce((s,e)=>s+(e.outwardQty||0),0);
+    const totalIn  = rows.reduce((s,e)=>s+(e.inwardQty||0),0);
+    const totalWaste = totalOut - totalIn;
+    const avgWaste = totalOut > 0 ? (totalWaste/totalOut)*100 : 0;
+    body.innerHTML = `
+      <div class="dash-grid">
+        <div class="dash-metric"><div class="dash-num">${rows.length}</div><div class="dash-lbl">Total Entries</div></div>
+        <div class="dash-metric"><div class="dash-num">₹${fmt(totalAmt)}</div><div class="dash-lbl">Total Amount</div></div>
+        <div class="dash-metric"><div class="dash-num">${avgWaste.toFixed(2)}%</div><div class="dash-lbl">Avg Wastage</div></div>
+        <div class="dash-metric"><div class="dash-num">${totalOut.toFixed(0)}</div><div class="dash-lbl">Total Outward</div></div>
+        <div class="dash-metric"><div class="dash-num">${totalIn.toFixed(0)}</div><div class="dash-lbl">Total Inward</div></div>
+        <div class="dash-metric"><div class="dash-num">${totalWaste.toFixed(0)}</div><div class="dash-lbl">Total Wastage</div></div>
+      </div>
+    `;
+  } else if (state.ownerView === 'jobworker' || state.ownerView === 'brand' || state.ownerView === 'itemName' || state.ownerView === 'size' || state.ownerView === 'process') {
+    const key = state.ownerView;
+    const labelMap = { jobworker:'jobworker', brand:'brand', itemName:'item', size:'size', process:'process' };
+    const groups = {};
+    rows.forEach(e => {
+      const k = e[key] || '—';
+      if (!groups[k]) groups[k] = { count:0, amount:0, out:0, in:0 };
+      groups[k].count++;
+      groups[k].amount += e.amount||0;
+      groups[k].out += e.outwardQty||0;
+      groups[k].in  += e.inwardQty||0;
+    });
+    const arr = Object.entries(groups).sort((a,b) => b[1].amount - a[1].amount);
+    const maxAmt = Math.max(...arr.map(x=>x[1].amount), 1);
+    body.innerHTML = `
+      <div class="section-label">Breakdown by ${labelMap[key]}</div>
+      ${arr.map(([name, g]) => `
+        <div class="bar-wrap">
+          <div class="bar-label"><span>${esc(name)} <span style="color:var(--text-muted);font-weight:400">(${g.count} entries, ${(g.out-g.in).toFixed(1)} waste)</span></span><span>₹${fmt(g.amount)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(g.amount/maxAmt)*100}%"></div></div>
+        </div>
+      `).join('') || '<div class="empty-state">No data for selected period</div>'}
+    `;
+  } else if (state.ownerView === 'mom') {
+    const groups = {};
+    rows.forEach(e => {
+      const m = (e.date||'').slice(0,7);
+      if (!m) return;
+      if (!groups[m]) groups[m] = { count:0, amount:0 };
+      groups[m].count++;
+      groups[m].amount += e.amount||0;
+    });
+    const arr = Object.entries(groups).sort();
+    const maxAmt = Math.max(...arr.map(x=>x[1].amount), 1);
+    body.innerHTML = `
+      <div class="section-label">Month vs Month</div>
+      ${arr.map(([m, g]) => `
+        <div class="bar-wrap">
+          <div class="bar-label"><span>${esc(m)} <span style="color:var(--text-muted);font-weight:400">(${g.count})</span></span><span>₹${fmt(g.amount)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(g.amount/maxAmt)*100}%"></div></div>
+        </div>
+      `).join('') || '<div class="empty-state">No data</div>'}
+    `;
+  } else if (state.ownerView === 'wastage') {
+    const {warn, danger} = state.wasteThresholds;
+    const high = rows.filter(e => (e.wastagePct||0) >= danger).sort((a,b) => (b.wastagePct||0)-(a.wastagePct||0));
+    const mid  = rows.filter(e => (e.wastagePct||0) >= warn && (e.wastagePct||0) < danger);
+    body.innerHTML = `
+      <div class="notice warn">⚠ High wastage threshold: ${danger}% &nbsp;|&nbsp; Warning threshold: ${warn}%</div>
+      <div class="section-label">High Wastage Entries (≥ ${danger}%)</div>
+      ${high.length ? `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Ref</th><th>Date</th><th>Jobworker</th><th>Brand</th><th>Item</th><th>Size</th><th>Process</th><th>Out/In</th><th>Waste %</th><th>Amount</th></tr></thead>
+          <tbody>${high.map(e => `<tr onclick="openDetail('${e.id}')" style="cursor:pointer">
+            <td>${esc(e.ref||'')}</td><td>${esc(e.date||'')}</td><td>${esc(e.jobworker||'')}</td>
+            <td>${esc(e.brand||'')}</td><td>${esc(e.itemName||'')}</td><td>${esc(e.size||'')}</td><td>${esc(e.process||'')}</td>
+            <td>${e.outwardQty||0} / ${e.inwardQty||0}</td>
+            <td style="color:#991B1B;font-weight:700">${(e.wastagePct||0).toFixed(2)}%</td>
+            <td>₹${fmt(e.amount||0)}</td></tr>`).join('')}</tbody>
+        </table></div>
+      ` : '<div class="empty-state">No high-wastage entries — good!</div>'}
+      <div style="height:18px"></div>
+      <div class="section-label">Warning Range (${warn}% – ${danger}%): ${mid.length} entries</div>
+    `;
+  } else if (state.ownerView === 'closing') {
+    const months = {};
+    state.entries.forEach(e => {
+      const m = (e.date||'').slice(0,7);
+      if (m) months[m] = (months[m]||0) + 1;
+    });
+    const arr = Object.keys(months).sort().reverse();
+    body.innerHTML = `
+      <div class="section-label">Monthly Closing</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Closing a month locks it against new entries. Only owners can reopen.</p>
+      ${arr.map(m => {
+        const closed = state.closedMonths.find(c => c.month === m);
+        return `<div class="setting-row">
+          <div class="setting-label">${m}</div>
+          <div class="setting-desc">${months[m]} entries ${closed ? `• closed ${esc(closed.closedAt)} by ${esc(closed.closedBy)}` : ''}</div>
+          ${closed
+            ? `<button class="btn-sm btn-reject" onclick="reopenMonth('${m}')">Reopen</button>`
+            : `<button class="btn-sm btn-approve" onclick="closeMonth('${m}')">Close</button>`}
+        </div>`;
+      }).join('') || '<div class="empty-state">No months yet</div>'}
+    `;
+  }
+}
+
+async function closeMonth(m) {
+  if (!confirm(`Close ${m}? No new entries can be added for this month.`)) return;
+  state.closedMonths.push({ month:m, closedAt:new Date().toLocaleString('en-IN'), closedBy:state.user.username });
+  persist();
+  renderOwner();
+  if (state.sheetUrl) {
+    try {
+      await fetch(`${state.sheetUrl}?action=closeMonth&month=${encodeURIComponent(m)}&by=${encodeURIComponent(state.user.username)}`);
+    } catch(e) {}
+  }
+}
+async function reopenMonth(m) {
+  if (!confirm(`Reopen ${m}?`)) return;
+  state.closedMonths = state.closedMonths.filter(c => c.month !== m);
+  persist();
+  renderOwner();
+  if (state.sheetUrl) {
+    try {
+      await fetch(`${state.sheetUrl}?action=reopenMonth&month=${encodeURIComponent(m)}`);
+    } catch(e) {}
+  }
+}
+
+// ── SETTINGS ────────────────────────────────────────────────────────────────
+function renderSettings() {
+  document.getElementById('set-url').value = state.sheetUrl || '';
+  document.getElementById('set-waste-warn').value = state.wasteThresholds.warn;
+  document.getElementById('set-waste-danger').value = state.wasteThresholds.danger;
+  renderUsersList();
+  renderListsCounts();
+}
+
+function renderListsCounts() {
+  const el = document.getElementById('lists-counts');
+  if (!el) return;
+  const box = (label, n) => `<div style="padding:10px 12px;background:var(--bg);border-radius:8px"><b>${label}</b> — ${n} loaded</div>`;
+  el.innerHTML = box('Brands', state.brands.length) + box('Items', state.items.length) +
+                 box('Sizes', state.sizes.length) + box('Processes', state.processes.length) +
+                 box('Jobworkers', state.jobworkers.length);
+}
+
+function renderUsersList() {
+  document.getElementById('users-list').innerHTML = state.users.map((u,i) => `
+    <div class="setting-row">
+      <div class="setting-label">${esc(u.fullname || u.username)}</div>
+      <div class="setting-desc">@${esc(u.username)} • ${esc(u.role)} ${u.jobworkerName ? '• '+esc(u.jobworkerName) : ''}</div>
+      <button class="btn-sm btn-approve" onclick="openUserModal(${i})">Edit</button>
+      <button class="btn-sm btn-reject" onclick="deleteUser(${i})">Del</button>
+    </div>
+  `).join('') || '<div class="empty-state">No users</div>';
+}
+
+// Jobworkers are managed in the Google Sheet — see refreshLists()
+
+// Brand/Item/Size/Process lists are managed in the Google Sheet.
+// Use refreshLists() to pull them into the app.
+
+function saveSettings() {
+  state.sheetUrl = document.getElementById('set-url').value.trim();
+  localStorage.setItem(LS_URL, state.sheetUrl);
+  notify('Settings saved','success');
+  if (state.sheetUrl) loadEverything();
+}
+
+function saveWasteThresholds() {
+  state.wasteThresholds.warn = Number(document.getElementById('set-waste-warn').value) || 2;
+  state.wasteThresholds.danger = Number(document.getElementById('set-waste-danger').value) || 5;
+  persist();
+  notify('Thresholds saved','success');
+  updateSummary();
+}
+
+async function testConnection() {
+  const url = document.getElementById('set-url').value.trim();
+  if (!url) return notify('Enter a URL first','error');
+  try {
+    const r = await fetch(url + '?ping=1');
+    const j = await r.json();
+    if (j.success) notify('Connected ✓','success');
+    else throw new Error(j.error);
+  } catch(e) {
+    notify('Connection failed: '+e.message,'error');
+  }
+}
+
+// ── Edit modal (shared) ─────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openUserModal(idx) {
+  const u = (idx != null) ? state.users[idx] : { username:'', password:'', fullname:'', role:'jobworker', jobworkerName:'' };
+  state.editContext = { type:'user', idx };
+  document.getElementById('edit-title').textContent = (idx != null) ? 'Edit User' : 'Add User';
+  document.getElementById('edit-body').innerHTML = `
+    <div class="fg" style="margin-bottom:10px"><label>Full Name</label><input id="em-fullname" value="${esc(u.fullname||'')}"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Username</label><input id="em-username" value="${esc(u.username||'')}"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Password</label><input id="em-password" value="${esc(u.password||'')}"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Role</label>
+      <select id="em-role">
+        <option value="owner" ${u.role==='owner'?'selected':''}>Owner (full access)</option>
+        <option value="admin" ${u.role==='admin'?'selected':''}>Admin (can approve)</option>
+        <option value="jobworker" ${u.role==='jobworker'?'selected':''}>Jobworker (entry only)</option>
+      </select></div>
+    <div class="fg"><label>Linked Jobworker (optional)</label>
+      <select id="em-jobworker"><option value="">None</option>
+        ${state.jobworkers.map(j => `<option value="${esc(j.name)}" ${u.jobworkerName===j.name?'selected':''}>${esc(j.name)}</option>`).join('')}
+      </select></div>
+  `;
+  openModal('edit-modal');
+}
+
+function openJobworkerModal() { notify('Jobworkers are managed in the Google Sheet','info'); }
+
+function openBrandModal() { notify('Brands are managed in the Google Sheet','info'); }
+function openItemModal()  { notify('Items are managed in the Google Sheet','info'); }
+function openSizeModal()  { notify('Sizes are managed in the Google Sheet','info'); }
+function openProcessModal(){ notify('Processes are managed in the Google Sheet','info'); }
+
+function saveEditModal() {
+  const ctx = state.editContext;
+  if (!ctx) return;
+  if (ctx.type === 'user') {
+    const obj = {
+      username: document.getElementById('em-username').value.trim(),
+      password: document.getElementById('em-password').value,
+      fullname: document.getElementById('em-fullname').value.trim(),
+      role: document.getElementById('em-role').value,
+      jobworkerName: document.getElementById('em-jobworker').value
+    };
+    if (!obj.username || !obj.password) return notify('Username and password required','error');
+    if (ctx.idx != null) state.users[ctx.idx] = obj;
+    else state.users.push(obj);
+    if (state.sheetUrl) {
+      fetch(`${state.sheetUrl}?action=saveUsers&users=${encodeURIComponent(JSON.stringify(state.users))}`).catch(()=>{});
+    }
+    renderUsersList();
+  } else if (ctx.type === 'jobworker' || ctx.type === 'brand' || ctx.type === 'item' || ctx.type === 'size' || ctx.type === 'process') {
+    // These lists are managed in the Google Sheet — no-op
+    closeModal('edit-modal');
+    return;
+  }
+  persist();
+  closeModal('edit-modal');
+  notify('Saved','success');
+}
+
+function deleteUser(i) {
+  if (!confirm('Delete this user?')) return;
+  state.users.splice(i, 1);
+  persist();
+  renderUsersList();
+  if (state.sheetUrl) fetch(`${state.sheetUrl}?action=saveUsers&users=${encodeURIComponent(JSON.stringify(state.users))}`).catch(()=>{});
+}
+function deleteJobworker() { notify('Jobworkers are managed in the Google Sheet','info'); }
+function deleteBrand()   { notify('Brands are managed in the Google Sheet','info'); }
+function deleteItem()    { notify('Items are managed in the Google Sheet','info'); }
+function deleteSize()    { notify('Sizes are managed in the Google Sheet','info'); }
+function deleteProcess() { notify('Processes are managed in the Google Sheet','info'); }
+
+// ── EXPORT CSV ──────────────────────────────────────────────────────────────
+function exportLogCSV() {
+  const rows = visibleEntries().filter(e => e.status !== 'deleted');
+  if (!rows.length) return notify('Nothing to export','error');
+  const headers = ['Ref','Date','Jobworker','Challan','Brand','Item Name','Size','Process','Outward','Inward','Wastage','Wastage %','Rate','Amount','Status','Staff','Notes'];
+  const lines = [headers.join(',')];
+  rows.forEach(e => {
+    const r = [
+      e.ref, e.date, e.jobworker, e.challan, e.brand, e.itemName, e.size, e.process,
+      e.outwardQty, e.inwardQty, e.wastage, e.wastagePct,
+      e.rate, e.amount, e.status, e.staff, e.notes
+    ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',');
+    lines.push(r);
+  });
+  const blob = new Blob([lines.join('\n')], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `jobwork_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+function esc(s) { return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function fmt(n) { return Number(n||0).toLocaleString('en-IN', { maximumFractionDigits:2 }); }
+function formatDateForDisplay(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function notify(msg, type) {
+  const el = document.getElementById('global-notice');
+  el.textContent = msg;
+  el.className = 'notice ' + (type||'info');
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// ── BOOT ────────────────────────────────────────────────────────────────────
+updateOnline();
+if (state.user) showApp();
+</script>
+
+</body>
+</html>
