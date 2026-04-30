@@ -852,7 +852,7 @@ async function syncToSheet() {
 async function loadEverything() {
   if (!state.sheetUrl) return;
   try {
-    const [entriesRes, usersRes, jwRes, brandsRes, itemsRes, sizesRes, processesRes, monthsRes] = await Promise.all([
+    const [entriesRes, usersRes, jwRes, brandsRes, itemsRes, sizesRes, processesRes, monthsRes, tombsRes] = await Promise.all([
       fetch(state.sheetUrl + '?action=getAll').then(r=>r.json()),
       fetch(state.sheetUrl + '?action=getUsers').then(r=>r.json()),
       fetch(state.sheetUrl + '?action=getJobworkers').then(r=>r.json()),
@@ -860,9 +860,14 @@ async function loadEverything() {
       fetch(state.sheetUrl + '?action=getItems').then(r=>r.json()),
       fetch(state.sheetUrl + '?action=getSizes').then(r=>r.json()),
       fetch(state.sheetUrl + '?action=getProcesses').then(r=>r.json()),
-      fetch(state.sheetUrl + '?action=getClosedMonths').then(r=>r.json())
+      fetch(state.sheetUrl + '?action=getClosedMonths').then(r=>r.json()),
+      fetch(state.sheetUrl + '?action=getTombstones').then(r=>r.json())
     ]);
-    if (entriesRes.entries) state.entries = entriesRes.entries;
+    const tombs = (tombsRes && tombsRes.ids) ? new Set(tombsRes.ids.map(String)) : new Set();
+    if (entriesRes.entries) {
+      // Filter out tombstoned entries even if the sheet still has them
+      state.entries = entriesRes.entries.filter(e => !tombs.has(String(e.id)));
+    }
     if (usersRes.users && usersRes.users.length) state.users = usersRes.users;
     if (jwRes.jobworkers) state.jobworkers = jwRes.jobworkers;
     if (brandsRes.brands) state.brands = brandsRes.brands;
@@ -1164,14 +1169,27 @@ function confirmReject() {
   if (state.sheetUrl) pushEntry(e);
 }
 
-function deleteEntry(id) {
-  if (!confirm('Delete this entry?')) return;
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry? This cannot be undone.')) return;
   const e = state.entries.find(x => x.id === id);
   if (!e) return;
+  // Mark as deleted and push final state to sheet (so the sheet row gets the deleted color)
   e.status = 'deleted';
+  if (state.sheetUrl) {
+    try {
+      // Push the deleted-status row first
+      await pushEntry(e);
+      // Then add to tombstones so it can never be resurrected by a stale client
+      await fetch(`${state.sheetUrl}?action=addTombstone&id=${encodeURIComponent(e.id)}&ref=${encodeURIComponent(e.ref||'')}`);
+    } catch(err) {
+      notify('Delete sync failed — try Sync From Sheet','warn');
+    }
+  }
+  // Purge from local state (don't keep deleted entries cached locally)
+  state.entries = state.entries.filter(x => x.id !== id);
   persist();
   renderAll();
-  if (state.sheetUrl) pushEntry(e);
+  notify('Entry deleted','success');
 }
 
 // ── OWNER DASHBOARD ─────────────────────────────────────────────────────────
