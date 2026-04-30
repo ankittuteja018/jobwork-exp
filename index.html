@@ -177,7 +177,7 @@ body.dark .expense-summary-row.total{background:rgba(2,128,144,.2)}
       <button onclick="closeUserMenu();logout()" style="width:100%;text-align:left;background:none;border:none;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#EF4444;display:flex;align-items:center;gap:8px">🚪 Logout</button>
     </div>
     <button class="pill-btn" onclick="refreshLists()" id="refresh-btn" title="Pull latest Brand/Item/Size/Process lists from Google Sheet">↻ Refresh Lists</button>
-    <button class="pill-btn primary" onclick="syncToSheet()" id="sync-btn">Sync To Sheet</button>
+    <button class="pill-btn primary" onclick="syncToSheet()" id="sync-btn">Sync From Sheet</button>
   </div>
 </div>
 
@@ -836,21 +836,16 @@ async function syncToSheet() {
   const btn = document.getElementById('sync-btn');
   btn.disabled = true; btn.textContent = 'Syncing...';
   try {
-    // Push all local entries
-    const res = await fetch(state.sheetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type':'text/plain;charset=UTF-8' },
-      body: JSON.stringify({ entries: state.entries })
-    });
-    const j = await res.json();
-    if (!j.success) throw new Error(j.error);
-    // Pull fresh
+    // Pull-only sync: clear local entries cache so the sheet is the absolute source of truth.
+    // Entries deleted manually from the sheet will disappear from the app after this.
+    // Individual entries are auto-pushed when saved, so no push is needed here.
+    state.entries = [];
     await loadEverything();
-    notify(`Synced: ${j.added||0} added, ${j.updated||0} updated`,'success');
+    notify(`Synced from sheet — ${state.entries.length} entries loaded`,'success');
   } catch(e) {
     notify('Sync failed: '+e.message,'error');
   } finally {
-    btn.disabled = false; btn.textContent = 'Sync To Sheet';
+    btn.disabled = false; btn.textContent = 'Sync From Sheet';
   }
 }
 
