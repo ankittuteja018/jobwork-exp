@@ -190,7 +190,7 @@ body.dark .expense-summary-row.total{background:rgba(2,128,144,.2)}
     <input type="password" id="login-pass" placeholder="Password" style="width:100%;padding:12px 14px;border:1px solid var(--input-border);border-radius:10px;font-size:14px;color:var(--text);background:var(--input-bg);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')loginUser()">
     <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:9px;font-size:12.5px;margin-bottom:12px"></div>
     <button class="btn-primary full" onclick="loginUser()">Sign In</button>
-    <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">Default: <b>admin</b> / <b>admin123</b></p>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">Use credentials provided by your administrator.</p>
   </div>
 </div>
 
@@ -516,6 +516,12 @@ body.dark .expense-summary-row.total{background:rgba(2,128,144,.2)}
 // Jobwork Expense Tracker — Frontend
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIGURATION — Replace the URL below with your Apps Script Web App URL.
+// This is what every new device uses by default. Admin can override in Settings.
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyPN-ToRVg6Qz5PYN3BYO4o0Wz4SOiwSmKm782FrUolbvvhxlvI3aMpbrtXgk7KLeYfdQ/exec';
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 const LS_URL       = 'jw_sheet_url';
 const LS_USER      = 'jw_current_user';
 const LS_ENTRIES   = 'jw_entries';
@@ -530,10 +536,10 @@ const LS_DARK      = 'jw_dark';
 const LS_WASTE     = 'jw_waste_thresholds';
 
 let state = {
-  sheetUrl: localStorage.getItem(LS_URL) || '',
+  sheetUrl: localStorage.getItem(LS_URL) || (DEFAULT_SHEET_URL.startsWith('http') ? DEFAULT_SHEET_URL : ''),
   user: JSON.parse(localStorage.getItem(LS_USER) || 'null'),
   entries: JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]'),
-  users: JSON.parse(localStorage.getItem(LS_USERS) || '[{"username":"admin","password":"admin123","fullname":"Admin","role":"owner"}]'),
+  users: JSON.parse(localStorage.getItem(LS_USERS) || '[]'),
   jobworkers: JSON.parse(localStorage.getItem(LS_JW) || '[]'),
   brands: JSON.parse(localStorage.getItem(LS_BRANDS) || '[]'),
   items: JSON.parse(localStorage.getItem(LS_ITEMS) || '[]'),
@@ -574,22 +580,56 @@ function toggleDarkMode() {
 if (localStorage.getItem(LS_DARK) === '1') document.body.classList.add('dark');
 
 // ── LOGIN ───────────────────────────────────────────────────────────────────
-function loginUser() {
+async function loginUser() {
   const name = document.getElementById('login-name').value.trim();
   const pass = document.getElementById('login-pass').value;
   const err = document.getElementById('login-error');
-  const u = state.users.find(u => u.username.toLowerCase() === name.toLowerCase() && u.password === pass);
-  if (!u) {
-    err.textContent = 'Invalid username or password.';
+  const btn = document.querySelector('#login-screen .btn-primary');
+
+  if (!name || !pass) {
+    err.textContent = 'Enter username and password.';
     err.style.display = 'block';
     return;
   }
-  state.user = u;
-  localStorage.setItem(LS_USER, JSON.stringify(u));
+  if (!state.sheetUrl) {
+    err.textContent = 'App not configured. Contact your administrator.';
+    err.style.display = 'block';
+    return;
+  }
+  if (!navigator.onLine) {
+    err.textContent = 'No internet connection. Login requires being online.';
+    err.style.display = 'block';
+    return;
+  }
+
   err.style.display = 'none';
-  showApp();
-  // Try loading fresh data from sheet in background
-  if (state.sheetUrl) { loadEverything(); }
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
+
+  try {
+    // Always fetch fresh users from the sheet — never trust local cache for auth
+    const res = await fetch(state.sheetUrl + '?action=getUsers');
+    const j = await res.json();
+    if (!j.success || !Array.isArray(j.users)) throw new Error('Could not reach the server');
+
+    state.users = j.users;
+    localStorage.setItem(LS_USERS, JSON.stringify(j.users));
+
+    const u = j.users.find(x => (x.username||'').toLowerCase() === name.toLowerCase() && x.password === pass);
+    if (!u) {
+      err.textContent = 'Invalid username or password.';
+      err.style.display = 'block';
+      return;
+    }
+    state.user = u;
+    localStorage.setItem(LS_USER, JSON.stringify(u));
+    showApp();
+    loadEverything(); // pull rest of data in background
+  } catch (e) {
+    err.textContent = 'Login failed: ' + e.message + '. Check your connection and try again.';
+    err.style.display = 'block';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+  }
 }
 
 function logout() {
@@ -1534,7 +1574,31 @@ function notify(msg, type) {
 
 // ── BOOT ────────────────────────────────────────────────────────────────────
 updateOnline();
-if (state.user) showApp();
+if (state.user) {
+  showApp();
+  // Re-validate the cached session against the sheet — if the user was deleted
+  // or password changed, log them out immediately
+  if (state.sheetUrl && navigator.onLine) {
+    fetch(state.sheetUrl + '?action=getUsers').then(r => r.json()).then(j => {
+      if (j.success && Array.isArray(j.users)) {
+        state.users = j.users;
+        localStorage.setItem(LS_USERS, JSON.stringify(j.users));
+        const stillValid = j.users.find(x =>
+          (x.username||'').toLowerCase() === (state.user.username||'').toLowerCase() &&
+          x.password === state.user.password
+        );
+        if (!stillValid) {
+          notify('Your session has expired. Please log in again.','warn');
+          logout();
+        } else {
+          // refresh local user record in case role/jobworker link changed
+          state.user = stillValid;
+          localStorage.setItem(LS_USER, JSON.stringify(stillValid));
+        }
+      }
+    }).catch(()=>{});
+  }
+}
 </script>
 
 </body>
